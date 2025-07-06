@@ -1,49 +1,68 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { api } from '../lib/api';
 
 export default function Login() {
   const [user, setUser] = useState('');
 
   const iniciarSesion = async () => {
-    if (user.trim() !== '') {
-      try {
-        const response = await api.get('/Users');
-        const usuarios = response.data;
+    const nombreIngresado = user.trim().toLowerCase();
 
-        const existe = usuarios.some(
-          (u: { nombre: string }) => u.nombre.toLowerCase() === user.trim().toLowerCase()
-        );
+    if (!nombreIngresado) {
+      Alert.alert('Campo vacío', 'Ingrese su nombre de usuario');
+      return;
+    }
 
-        if (existe) {
-          router.replace({
-            pathname: '/(tabs)/home',
-            params: { user: user.trim() },
-          });
-        } else {
-          Alert.alert('Error', 'Usuario no encontrado');
-        }
-      } catch (error) {
-        console.error(error);
-        Alert.alert('Error', 'No se pudo conectar con el servidor');
+    try {
+      const response = await api.get('/Users');
+      const usuarios = response.data;
+
+      console.log('Usuarios recibidos:', usuarios);
+
+      const existe = usuarios.some(
+        (u: { nombre: string }) =>
+          u.nombre?.trim().toLowerCase() === nombreIngresado
+      );
+
+      if (existe) {
+        router.replace({
+          pathname: '/(tabs)/home',
+          params: { user: nombreIngresado },
+        });
+      } else {
+        Alert.alert('Error', 'Usuario no encontrado');
       }
+    } catch (error: any) {
+      console.error('Error al conectar con el servidor:', error?.message);
+      Alert.alert('Error', 'No se pudo conectar con el servidor');
     }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Iniciar Sesión</Text>
+
       <TextInput
         placeholder="Usuario"
         placeholderTextColor="#ccc"
         value={user}
         onChangeText={setUser}
         style={styles.input}
+        autoCapitalize="none"
       />
+
       <TouchableOpacity style={styles.button} onPress={iniciarSesion}>
         <Text style={styles.buttonText}>Entrar</Text>
       </TouchableOpacity>
+
       <TouchableOpacity
         style={[styles.button, styles.secondaryButton]}
         onPress={() => router.push('/registrar')}
