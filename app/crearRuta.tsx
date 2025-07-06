@@ -3,7 +3,7 @@ import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { FlatList, LayoutAnimation, Platform, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
-
+import MapView, { Marker, UrlTile } from 'react-native-maps';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -79,18 +79,55 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bike155</Text>
+      <Text style={styles.title}>Rutas Hechas</Text>
 
-      {location && (
-        <Text style={styles.ubicacionText}>
-          Tu ubicación actual: {location.coords.latitude.toFixed(5)}, {location.coords.longitude.toFixed(5)}
-        </Text>
+      {location ? (
+        <>
+          <Text style={styles.ubicacionText}>
+            Tu ubicación actual: {location.coords.latitude.toFixed(5)}, {location.coords.longitude.toFixed(5)}
+          </Text>
+          <MapView
+            style={styles.map}
+            initialRegion={{
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
+          >
+            <UrlTile
+              urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maximumZ={19}
+            />
+            <Marker
+              coordinate={{
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+              }}
+              title="Tu ubicación"
+              pinColor="blue"
+            />
+            {rutasHechas.map(ruta =>
+              ruta.latitud !== undefined && ruta.longitud !== undefined ? (
+                <Marker
+                  key={ruta.id}
+                  coordinate={{ latitude: ruta.latitud, longitude: ruta.longitud }}
+                  title={ruta.ubicacion}
+                  description={getTipoRuta(ruta.bike)}
+                />
+              ) : null
+            )}
+          </MapView>
+        </>
+      ) : (
+        <Text style={styles.ubicacionText}>Obteniendo ubicación...</Text>
       )}
 
       <FlatList
         data={rutasHechas}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderRuta}
+        style={{ marginTop: 10 }}
       />
 
       <View style={styles.buttonContainer}>
@@ -150,6 +187,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 8,
     textAlign: 'center',
+  },
+  map: {
+    width: '100%',
+    height: 300,
+    marginBottom: 10,
+    borderRadius: 8,
   },
   buttonContainer: {
     position: 'absolute',
